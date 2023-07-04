@@ -1,9 +1,8 @@
 import email
 import imaplib
 from email.header import decode_header
-import base64
-from bs4 import BeautifulSoup
-import re
+
+import emailHandler
 
 #  Сохранение зависимостей -  pip freeze > requirements.txt
 
@@ -17,6 +16,7 @@ imap_port = 993
 imap = imaplib.IMAP4_SSL(host=imap_server, port=imap_port)
 imap.login(username, mail_pass)
 
+filename = "file.docx"
 
 def main():
     select_resp = imap.select("INBOX")
@@ -25,7 +25,7 @@ def main():
     # TODO: Проверка на корректность подключения
     print(f"Start - Status:<{select_resp[0]}>, mails count:{mails_count}")
 
-    res, msg = imap.fetch(b'853', '(RFC822)')
+    res, msg = imap.fetch(b'858', '(RFC822)')
     msg = email.message_from_bytes(msg[0][1])
 
     # дата получения, приходит в виде строки, дальше надо её парсить в формат datetime
@@ -37,16 +37,33 @@ def main():
 
     # TODO: Проверка на пустое название
     header = decode_header(msg["Subject"])[0][0].decode()  # Декодирование названия письма
-
     print(header)
 
     for part in msg.walk():
+
         if part.get_content_disposition() == 'attachment':
             print(decode_header(part.get_filename())[0][0].decode())  # Получение названия файла
 
+            with open(filename, "wb") as f:
+                f.write(part.get_payload(decode=True))  # Сохранение файла
+
 
 if __name__ == '__main__':
-    main()
+    # main()
+    mail = emailHandler.MailBox()
+    mail.__enter__()
+
+    msg = mail.fetch_message()
+    title = decode_header(msg["Subject"])[0][0].decode()
+    print(title)
+
+    with open(filename, "wb") as f:
+        f.write(mail.get_attachment()[1])
+
+    mail.__exit__()
+
+
+
 
 
 

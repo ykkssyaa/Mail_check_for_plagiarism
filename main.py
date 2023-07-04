@@ -112,10 +112,35 @@ def message_processing(msg):
     return [date.date(), title]
 
 
+# Проход по списку, где указаны пройденные проверку файлы. Спрашиваем пользователя, что проверить
+def attachments_list_processing(attachments):
+
+    if len(attachments) == 0:
+        print("attachments is empty")
+        return
+
+    res = []
+
+
+    for i, file in enumerate(attachments):
+        print(f"{i} Файл\n Тема письма: {file[0]} \n Дата получения {file[1]}\n Название файла {file[0][0]}\n")
+        user_choice = input("Сохранить данный файл? (1-да)\n >> ")
+
+        if user_choice == '1':
+            res.append(file)
+
+    for file in res:
+        pass  # TODO: проход по подтсвержденным файлам, сохранение их
+
+    # TODO: Обработка файлов на антиплагиат
+    # TODO: Сохранение отчетов вместе с файлами
+    # TODO: Общий отчет о всех обработанных файлах
 # Проход по всем письмам, которые были получены в течение недели
 def check_mail_last_week(flag: str):
     try:
         with emailHandler.MailBox(flag) as mail:
+            attachments = []  # Список на одобрение
+
             for msg_num in range(1, len(mail.emails) + 1):
                 try:
                     # Считываю с письма вложения и удаляю с ненужным расширением
@@ -125,15 +150,17 @@ def check_mail_last_week(flag: str):
 
                     # Считываю тему письма и дату получения
                     date, title = message_processing(mail.fetch_message(-msg_num))
-                    print(title, attachment[0][0])
+                    #print(title, attachment[0][0])
 
-                    # TODO: Добавить каждый файл в список на одобрение
-                    # TODO: Пройти список на одобрение, если файл был одобрен на проверку, сохраняем его в отдельной папке
-                    # TODO: Обработка файлов на антиплагиат
-                    # TODO: Сохранение отчетов вместе с файлами
-                    # TODO: Общий отчет о всех обработанных файлах
+                    # Добавляю вложение в список на одобрение
+                    for i in attachment:
+                        attachments.append([title, date, i])
 
-                except NameError:
+
+                except NameError:  # Как только на обработку идут старые письма(старше недели), обработка завершается
+
+                    # Проходим по списку на одобрение и спрашиваем пользователя, какие файлы нужно проверить
+                    attachments_list_processing(attachments)
                     break
 
     except NameError as err:

@@ -127,6 +127,12 @@ def check_mail_last_week(flag: str):
                     date, title = message_processing(mail.fetch_message(-msg_num))
                     print(title, attachment[0][0])
 
+                    # TODO: Добавить каждый файл в список на одобрение
+                    # TODO: Пройти список на одобрение, если файл был одобрен на проверку, сохраняем его в отдельной папке
+                    # TODO: Обработка файлов на антиплагиат
+                    # TODO: Сохранение отчетов вместе с файлами
+                    # TODO: Общий отчет о всех обработанных файлах
+
                 except NameError:
                     break
 

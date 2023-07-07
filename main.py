@@ -2,10 +2,13 @@
 # -*- coding: windows-1251 -*-
 import email
 import imaplib
+import os
 from email.header import decode_header
 from datetime import datetime, timedelta
+import urllib.request
 
 import emailHandler
+import antiPlagiatAPI
 
 #  Сохранение зависимостей -  pip freeze > requirements.txt
 
@@ -19,46 +22,11 @@ valid_file_extensions = ["docx", "pdf"]
 
 DAYS_COUNT = 7
 
-# TODO: убрать
-# Подключение к почте
-imap = imaplib.IMAP4_SSL(host=imap_server, port=imap_port)
-imap.login(username, mail_pass)
-
-
-def m_main():
-    select_resp = imap.select("INBOX")
-    mails_count = int(select_resp[1][0])
-
-    # TODO: Проверка на корректность подключения
-    print(f"Start - Status:<{select_resp[0]}>, mails count:{mails_count}")
-
-    res, msg = imap.fetch(b'858', '(RFC822)')
-    msg = email.message_from_bytes(msg[0][1])
-
-    # дата получения, приходит в виде строки, дальше надо её парсить в формат datetime
-    letter_date = email.utils.parsedate_tz(msg["Date"])
-    letter_id = msg["Message-ID"]  # айди письма
-    letter_from = msg["Return-path"]
-
-    print(f"Date: {letter_date}, ID: {letter_id}, FROM: {letter_from}\n")
-
-    # TODO: Проверка на пустое название
-    header = decode_header(msg["Subject"])[0][0].decode()  # Декодирование названия письма
-    print(header)
-
-    for part in msg.walk():
-
-        if part.get_content_disposition() == 'attachment':
-            print(decode_header(part.get_filename())[0][0].decode())  # Получение названия файла
-
-            with open(decode_header(part.get_filename())[0][0].decode(), "wb") as f:
-                f.write(part.get_payload(decode=True))  # Сохранение файла
-
 
 def main_menu():
     print("Меню:")
-    print("1. Просмотр писем за последнюю неделю")  # TODO: реализовать
-    print("2. Просмотр непрочитанных писем за последнюю неделю")  # TODO: реализовать
+    print("1. Просмотр писем за последнюю неделю")
+    print("2. Просмотр непрочитанных писем за последнюю неделю")
     print("3. Просмотр непрочитанных писем за последние N дней")  # TODO: реализовать
     print("4. Данные в конфиге")
     print("0. Выход")
@@ -66,10 +34,13 @@ def main_menu():
     return input("Ваш выбор: ")
 
 
+# TODO: реализовать
 def config_info():
-    pass  # TODO: реализовать
+    print("config_info не реализована!")
 
 
+# Проверка файла, допустимое ли у него расширение.
+# Проходимся по списку допустимых расширений
 def isFileValid(filename: str):
     for extension in valid_file_extensions:
         if extension in filename:
@@ -112,29 +83,64 @@ def message_processing(msg):
     return [date.date(), title]
 
 
+# Скачивание файла в заданную директорию
+def download_file(file):
+    new_dir = doc_dir + "\\" + "temp\\"
+
+    os.makedirs(os.path.dirname(new_dir), exist_ok=True)  # Создание папок, если их нет
+
+    # Запись в файл(скачивание файла)
+    with open(new_dir + file[2][0], "wb") as f:
+        f.write(file[2][1])
+
+    return new_dir
+
+
+# Обработка файла
+def file_processing(file):
+
+    file_name = file[2][0]
+
+    file_dir = download_file(file)
+    link, fullreport = antiPlagiatAPI.check_report(file_dir+file_name)
+
+    AuthorName = (fullreport.Attributes.DocumentDescription.Authors.AuthorName[0].Surname + "_"
+                 + fullreport.Attributes.DocumentDescription.Authors.AuthorName[0].OtherNames).replace(" ", "_").replace(".", "")
+
+    report_dir = file_dir.replace("temp", AuthorName)
+    report_name = report_dir + "\\reportOF"\
+                  + file_name[:file_name.rfind(".")]\
+                  + ".pdf"
+
+    os.makedirs(os.path.dirname(report_dir), exist_ok=True)
+    urllib.request.urlretrieve(link, report_name)
+
+    os.replace(file_dir+file_name, report_dir+file_name)
+
+    # TODO: Общий отчет о всех обработанных файлах
+
+
 # Проход по списку, где указаны пройденные проверку файлы. Спрашиваем пользователя, что проверить
 def attachments_list_processing(attachments):
-
     if len(attachments) == 0:
         print("attachments is empty")
         return
 
-    res = []
-
+    res = []  # Записываем сюда только те письма, что одобрил пользователь
 
     for i, file in enumerate(attachments):
-        print(f"{i} Файл\n Тема письма: {file[0]} \n Дата получения {file[1]}\n Название файла {file[0][0]}\n")
-        user_choice = input("Сохранить данный файл? (1-да)\n >> ")
+        print(f"{i + 1}.\n Тема письма: {file[0]} \n Дата получения {file[1]}\n Название файла {file[2][0]}\n")
+        user_choice = input("Сохранить данный файл? (1-да, STOP - обработать только одобренные)\n >> ")
 
         if user_choice == '1':
             res.append(file)
+        elif user_choice == "STOP":
+            break
 
     for file in res:
-        pass  # TODO: проход по подтсвержденным файлам, сохранение их
+        file_processing(file)
 
-    # TODO: Обработка файлов на антиплагиат
-    # TODO: Сохранение отчетов вместе с файлами
-    # TODO: Общий отчет о всех обработанных файлах
+
 # Проход по всем письмам, которые были получены в течение недели
 def check_mail_last_week(flag: str):
     try:
@@ -150,18 +156,18 @@ def check_mail_last_week(flag: str):
 
                     # Считываю тему письма и дату получения
                     date, title = message_processing(mail.fetch_message(-msg_num))
-                    #print(title, attachment[0][0])
+                    # print(title, attachment[0][0])
 
                     # Добавляю вложение в список на одобрение
                     for i in attachment:
                         attachments.append([title, date, i])
 
-
                 except NameError:  # Как только на обработку идут старые письма(старше недели), обработка завершается
 
                     # Проходим по списку на одобрение и спрашиваем пользователя, какие файлы нужно проверить
-                    attachments_list_processing(attachments)
                     break
+
+        attachments_list_processing(attachments)
 
     except NameError as err:
         print(err.name)
@@ -169,7 +175,7 @@ def check_mail_last_week(flag: str):
 
 # Главная функция
 def main():
-    # TODO: Hello messages - config data
+
     print("")
 
     while True:

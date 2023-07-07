@@ -2,6 +2,7 @@ import imaplib
 import email
 from email.header import decode_header
 
+
 class MailBox:
     SMTP_SERVER = "imap.mail.ru"
     SMTP_PORT = 993

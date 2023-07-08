@@ -4,12 +4,13 @@ from email.header import decode_header
 
 
 class MailBox:
-    SMTP_SERVER = "imap.mail.ru"
-    SMTP_PORT = 993
-    USER = "mr.ender.03@mail.ru"
-    PASSWORD = "m78pQdtJQ9vn6UAJPEUa"
+    def __init__(self, flag: str, SMTP_SERVER, SMTP_PORT, USER, PASSWORD):
 
-    def __init__(self, flag: str):
+        self.SMTP_SERVER = SMTP_SERVER
+        self.SMTP_PORT = SMTP_PORT
+        self.USER = USER
+        self.PASSWORD = PASSWORD
+
         self.imap = imaplib.IMAP4_SSL(host=self.SMTP_SERVER, port=self.SMTP_PORT)
         self.imap.login(self.USER, self.PASSWORD)
         self.flag = flag

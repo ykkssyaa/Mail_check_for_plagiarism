@@ -13,6 +13,8 @@ import antiPlagiatAPI
 
 #  Сохранение зависимостей -  pip freeze > requirements.txt
 
+# Скачать зависимости - pip install -r requirements.txt
+
 # TODO: сделать через настраиваемый корфиг
 doc_dir = ""   # Папка, куда сохранять скачанные файлы и отчеты к ним
 valid_file_extensions = [".docx", ".pdf"]  # Допустимые расширения файлов, именно они будут отбираться внутри писем

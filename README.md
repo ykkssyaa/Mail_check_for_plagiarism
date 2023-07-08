@@ -4,7 +4,9 @@
 
 [GitHub](https://github.com/ykkssyaa/Mail_check_for_plagiarism.git)
 
+Для загрузки всех библиотек 
 
+`pip install -r requirements.txt`
 
 ## Об API
 

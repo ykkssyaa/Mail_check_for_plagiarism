@@ -14,15 +14,15 @@ import antiPlagiatAPI
 #  Сохранение зависимостей -  pip freeze > requirements.txt
 
 # TODO: сделать через настраиваемый корфиг
-doc_dir = "F:\\IT\\AntiPlagiat"   # Папка, куда сохранять скачанные файлы и отчеты к ним
+doc_dir = ""   # Папка, куда сохранять скачанные файлы и отчеты к ним
 valid_file_extensions = [".docx", ".pdf"]  # Допустимые расширения файлов, именно они будут отбираться внутри писем
 
 DAYS_COUNT = 7
 
 SMTP_SERVER = "imap.mail.ru"  # IMAP сервер почты, указан для mail.ru
 SMTP_PORT = 993  # IMAP порт подключения к почте, лучше не менять
-USER = "mr.ender.03@mail.ru"  # Адрес почты
-PASSWORD = "m78pQdtJQ9vn6UAJPEUa"  # Пароль для почты
+USER = ""  # Адрес почты
+PASSWORD = ""  # Пароль для почты
 
 
 def main_menu():
